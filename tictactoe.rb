@@ -3,7 +3,6 @@ class Player
     @symbol = symbol
   end
 
-  attr_accessor :row, :column
   attr_reader :symbol
 
   def move()
