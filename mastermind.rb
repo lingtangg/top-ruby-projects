@@ -1,7 +1,8 @@
 module Mastermind
   COLOURS = ["red", "blue", "yellow", "green", "purple", "orange"]
-  RESPONSE = {:correct => 'x', :wrong_spot => 'o'}
+  RESPONSE = {:correct => 'x', :wrong_spot => 'o', :wrong => "/"}
   TURNS = 12
+end
 
 class Game
   def initialize(human_class, computer_class)
@@ -13,16 +14,20 @@ class Game
   def play()
     # play until all x or turns > 12
     correct_combo = @computer.starting_combo()
+    puts correct_combo
     mastermind = false
-    until mastermind == true
+    turns = 0
+    until mastermind == true || turns > 12 do 
+      turns += 1
       guess = @human.guess_combo()
       check = @computer.check_user_combo(guess, correct_combo)
       if check.class == Array
         puts check
       else
-        mastermind == true
+        mastermind = true
       end
     end
+    puts "You've lost the game"
   end
 end
 
@@ -39,13 +44,13 @@ class HumanPlayer < Player
   end
 
   def guess_combo()
-    remaining_colours = COLOURS
+    remaining_colours = COLOURS.dup
     guess = []
-    verified = false
     # ask user for choice 4 times
-    4.times do
+    4.times do |x|
+      verified = false
       # ensure user input is a valid ccolour
-      while verified = false
+      while verified == false
         puts "Choose from the following colours: #{remaining_colours.inspect}"
         user_guess = gets.chomp.downcase
         if verify_guess(user_guess, remaining_colours)
@@ -60,7 +65,7 @@ class HumanPlayer < Player
     # print user's guess
     puts "Your guess:"
     guess.each do |x|
-      puts "x"
+      puts x
     end
     guess
   end
@@ -88,10 +93,18 @@ class ComputerPlayer < Player
           answer_array.push(RESPONSE[:correct])
         else
           # otherwise check if the user's guess is in the correct combo but wrong spot
-          if correct_combo.include?(guess[1]) then answer_array.push(RESPONSE[:wrong_spot]) end
+          if correct_combo.include?(guess[1]) 
+            answer_array.push(RESPONSE[:wrong_spot])
+          else
+            answer_array.push(RESPONSE[:wrong])
+          end
         end
       end
       answer_array
     end
   end
 end
+
+include Mastermind
+
+Game.new(HumanPlayer, ComputerPlayer).play
