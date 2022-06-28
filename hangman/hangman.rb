@@ -4,11 +4,15 @@ end
 
 class Game
   def initialize(human_class)
-    @human = human_class.new(self)
+    @human = human_class.new
   end
 
   def choose_word()
-    chosen_word = File.readlines("google-10000-english/google-10000-english-no-swears.txt", 'r').map(&:chomp).sample
+    # choose word between 5 and 12 chars
+    chosen_word = 'test'
+    while chosen_word.length < 5 || chosen_word.length > 12
+      chosen_word = File.readlines("google-10000-english/google-10000-english-no-swears.txt", 'r').map(&:chomp).sample
+    end
     chosen_word
   end
 
@@ -18,7 +22,7 @@ class Game
 
   def indices_of_matches(str, target)
     sz = target.size
-    (0..str.size-sz).select {|i| stri[i,sz == target]}
+    (0..str.size-sz).select {|i| str[i,sz] == target}
   end
 
   def play()
@@ -28,21 +32,31 @@ class Game
     turn = 0
 
     until hangman_game.join == word || turn > TURNS
+      # ability to save and end game
+
+      puts "Word: #{hangman_game.join}"
+      puts "Guessed letters: #{guessed_letters.join(', ')}"
       guess = @human.guess_letter(guessed_letters)
       if word.include?(guess)
         # find indices of the letter
         appearances = indices_of_matches(word, guess)
         # replace the game array with the letters
-        apperances.each do |appearance|
+        appearances.each do |appearance|
           hangman_game[appearance] = guess
         end
       else
         puts "#{guess} is not in the word"
       end
       turn += 1
-      # show current guesses and guessed letters
-      puts "Word: #{hangman_game.join}"
-      puts "Guessed letters #{guessed_letters.join(', ')}"
+      puts "You have #{turn} turns left"
+    end
+    if hangman_game.join == word
+      puts "You have guessed the word!"
+      puts "#{word}"
+    end
+    if turn > TURNS
+      puts "You have run out of turns"
+      puts "The word was #{word}"
     end
   end
 end
@@ -76,9 +90,6 @@ class HumanPlayer < Player
 
 end
 
-class ComputerPlayer < Player
-
-end
-
 include Hangman
 
+Game.new(HumanPlayer).play
