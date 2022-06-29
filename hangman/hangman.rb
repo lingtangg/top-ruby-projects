@@ -1,13 +1,15 @@
+require 'json'
+
 module Hangman
   TURNS = 10
 end
 
 class Game
-  def initialize(human_class)
-    @human = human_class.new
+  def initialize(player_class)
+    @player = player_class.new
   end
 
-  def choose_word()
+  def choose_word
     # choose word between 5 and 12 chars
     chosen_word = 'test'
     while chosen_word.length < 5 || chosen_word.length > 12
@@ -22,21 +24,44 @@ class Game
 
   def indices_of_matches(str, target)
     sz = target.size
-    (0..str.size-sz).select {|i| str[i,sz] == target}
+    (0..str.size - sz).select { |i| str[i, sz] == target }
   end
 
-  def play()
+  def save_game(save_details)
+    File.open('save_file.txt', 'w') { |save_file| save_file.puts JSON.generate(save_details) }
+  end
+
+  def load_save
+    JSON.parse(File.read('save_file.txt'))
+  end
+
+  def play
     word = choose_word()
     hangman_game = Array.new(word.size, "_")
     guessed_letters = []
     turn = 0
+    save_details = []
+
+    # ask if player wants to load a game
+    puts "Would you like to load the saved game?"
+    load_game = gets.chomp.downcase
+    if load_game == 'yes'
+      word, hangman_game, guessed_letters, turn = load_save
+    end
 
     until hangman_game.join == word || turn > TURNS
       # ability to save and end game
-
+      puts 'Would you like to save and end the game?'
+      save = gets.chomp.downcase
+      if save == 'yes'
+        # save variables
+        save_details += [word, hangman_game, guessed_letters, turn]
+        save_game(save_details)
+        break
+      end
       puts "Word: #{hangman_game.join}"
       puts "Guessed letters: #{guessed_letters.join(', ')}"
-      guess = @human.guess_letter(guessed_letters)
+      guess = @player.guess_letter(guessed_letters)
       if word.include?(guess)
         # find indices of the letter
         appearances = indices_of_matches(word, guess)
@@ -48,11 +73,11 @@ class Game
         puts "#{guess} is not in the word"
       end
       turn += 1
-      puts "You have #{turn} turns left"
+      puts "You have #{TURNS - turn} turns left"
     end
     if hangman_game.join == word
       puts "You have guessed the word!"
-      puts "#{word}"
+      puts word.to_s
     end
     if turn > TURNS
       puts "You have run out of turns"
@@ -65,9 +90,7 @@ class Player
   def initalize(game)
     @game = game
   end
-end
 
-class HumanPlayer < Player
   def verify_guess(guess, guessed_letters)
     guessed_letters.include?(guess)
   end
@@ -87,9 +110,8 @@ class HumanPlayer < Player
     end
     user_guess
   end
-
 end
 
 include Hangman
 
-Game.new(HumanPlayer).play
+Game.new(Player).play

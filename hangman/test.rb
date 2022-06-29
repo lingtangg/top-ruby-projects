@@ -1,2 +1,1 @@
-name = gets.chomp
-puts name
+puts File.foreach('save_file.txt').map(&:split).inspect
